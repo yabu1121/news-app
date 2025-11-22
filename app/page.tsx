@@ -12,10 +12,8 @@ const TopPage = () => {
     return `${year}-${month}-${date}`;
   }
   const [selectedDate, setSelectedDate] = useState(formatDate(today));
-  const [loading, setLoading] = useState(false);
 
   const fetchNews = async (date : string) => {
-    setLoading(true);
     try {
       const res = await fetch(`api/news?date=${date}`)
       const data = await res.json();
@@ -25,8 +23,6 @@ const TopPage = () => {
       }
     } catch (error) {
       console.error("error: ",error);
-    }finally{
-      setLoading(false);
     }
   }
 
@@ -40,12 +36,6 @@ const TopPage = () => {
     fetchNews(newDate);
   }
 
-  const handleResetToday = () => {
-    const todayStr = formatDate(new Date());
-    setSelectedDate(todayStr);
-    fetchNews(todayStr);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -53,7 +43,7 @@ const TopPage = () => {
         
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center justify-center gap-4">
-            <label htmlFor="date-picker" className="text-lg font-semibold">
+            <label htmlFor="date-picker" className="text-sm font-semibold">
               日付を選択:
             </label>
             <input
@@ -63,12 +53,7 @@ const TopPage = () => {
               onChange={handleDateChange}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              onClick={handleResetToday}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            >
-              今日
-            </button>
+            
           </div>
         </div>
 
