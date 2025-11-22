@@ -1,52 +1,49 @@
 'use client'
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const TopPage = () => {
-  const [articles, setArticles] = useState([]);
+  const [articles, setArticles] = useState<any[]>([]);
   const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
-  const [date, setDate] = useState(today.getDate());
-  const [dateForApi, setDateForApi] = useState('');
+  const formatDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const date = d.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  }
+  const [selectedDate, setSelectedDate] = useState(formatDate(today));
+  const [loading, setLoading] = useState(false);
 
-  const api_key = process.env.NEXT_PUBLIC_API_KEY;
+  const fetchNews = async (date : string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`api/news?date=${date}`)
+      const data = await res.json();
+      console.log(data);
+      if(data.articles){
+        setArticles(data.articles);
+      }
+    } catch (error) {
+      console.error("error: ",error);
+    }finally{
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    const formattedMonth = month.toString().padStart(2, '0');
-    const formattedDate = date.toString().padStart(2, '0');
-    setDateForApi(`${year}-${formattedMonth}-${formattedDate}`);
-  }, [year, month, date]);
-
-  const handleGetData = async () => {
-    const res = await fetch(
-      `https://newsapi.org/v2/everything?q=apple&from=${dateForApi}&to=${dateForApi}&sortBy=popularity&apiKey=${api_key}`
-    );
-    const data = await res.json();
-    console.log(data);
-    if (data.articles) {
-      setArticles(data.articles);
-    }
-  };
-
-  useEffect(() => {
-    if (dateForApi) {
-      handleGetData();
-    }
-  }, [dateForApi]);
+    fetchNews(selectedDate);
+  },[])
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = new Date(e.target.value);
-    setYear(selectedDate.getFullYear());
-    setMonth(selectedDate.getMonth() + 1);
-    setDate(selectedDate.getDate());
-  };
+    const newDate = e.target.value;
+    setSelectedDate(newDate);
+    fetchNews(newDate);
+  }
 
-  const getCurrentDateValue = () => {
-    const formattedMonth = month.toString().padStart(2, '0');
-    const formattedDate = date.toString().padStart(2, '0');
-    return `${year}-${formattedMonth}-${formattedDate}`;
+  const handleResetToday = () => {
+    const todayStr = formatDate(new Date());
+    setSelectedDate(todayStr);
+    fetchNews(todayStr);
   };
 
   return (
@@ -62,16 +59,12 @@ const TopPage = () => {
             <input
               id="date-picker"
               type="date"
-              value={getCurrentDateValue()}
+              value={selectedDate}
               onChange={handleDateChange}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
-              onClick={() => {
-                setYear(today.getFullYear());
-                setMonth(today.getMonth() + 1);
-                setDate(today.getDate());
-              }}
+              onClick={handleResetToday}
               className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
             >
               今日
@@ -80,7 +73,7 @@ const TopPage = () => {
         </div>
 
         <h2 className="text-2xl font-semibold mb-6 text-center">
-          {year}年{month}月{date}日のニュース
+          {selectedDate}のニュース
         </h2>
 
         <div className="grid gap-6">
@@ -89,11 +82,10 @@ const TopPage = () => {
               <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
                 {article.urlToImage && (
                   <div className="relative w-full h-64">
-                    <Image
+                    <img
                       src={article.urlToImage}
                       alt={article.title}
-                      fill
-                      style={{ objectFit: "cover" }}
+                      className="w-full h-full object-cover"
                     />
                   </div>
                 )}
